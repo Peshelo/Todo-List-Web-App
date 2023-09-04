@@ -6,15 +6,29 @@ import Footer from "./Footer";
 import { useState,useEffect } from "react";
 
 function App() {
-  const [items, setItems] = useState(JSON.parse(localStorage.getItem('shoppingList')) || []);
+  const [items, setItems] = useState([]);
   const [newItem,setNewItem] = useState("")
   const [search,setSearch] = useState("")
-
+  const [fetchError,setFetchError] = useState(null)
+  const API_URL = "http://localhost:8000/items"
 
   // Watches changes in items
   useEffect(()=>{
-    localStorage.setItem("shoppingList", JSON.stringify(items));
-  },[items]);
+    
+    const fetchTodoList = async ()=>{
+        try{
+          const data = await fetch(API_URL);
+          if(!data.ok) throw Error('Did not receive data');
+          const todoList = await data.json();
+          setItems(todoList);
+          setFetchError(null);
+        }catch(err){
+          setFetchError(err.message)
+        }
+    }
+
+    fetchTodoList();
+  },[]);
 
 
   const addItem = (item) => {
@@ -58,10 +72,14 @@ function App() {
         search={search}
         setSearch={setSearch}
       />
-      <Content items={items.filter(item => ((item.item).toLowerCase())
-      .includes(search.toLowerCase()))}
-      handleCheck={handleCheck}
-      handleDelete={handleDelete} />
+      <main>
+        {fetchError && <p style={{color:"red"}}>{`Error: ${fetchError}`}</p>}
+         {!fetchError && <Content items={items.filter(item => ((item.item).toLowerCase())
+          .includes(search.toLowerCase()))}
+          handleCheck={handleCheck}
+          handleDelete={handleDelete} />}
+      </main>
+      
       <Footer length={items.length}/>
     </div>
   );
